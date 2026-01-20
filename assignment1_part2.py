@@ -42,45 +42,58 @@ def CBC_encrypt(plaintext):
     return bytes(CBC_output)
 
 def bitFlip():
-    # Craft input with placeholders we will flip: '?admin?true?'
-    # We'll flip the three '?' to ';', '=' and ';' to inject ';admin=true;'
-    user_input = "?admin?true?"
-    ciphertext = submit(user_input)
-    message = f"userid=456;userdata={urlEncode(user_input)};session-id=31337".encode("ascii")
+   user_input = ":admin/true"
+   ciphertext = submit(user_input)
+   message = f"userid=456;userdata={urlEncode(user_input)};session-id=31337".encode("ascii")
+   # Find position of '/', and ':''s for bit flipping
+   slash_pos = message.index(b'/')#b'/' is bytes
+   colon_pos = message.index(b':')#another safe char 
+   
+   #flipping the '/' to '='
+   block_num = slash_pos // 16
+   offset = slash_pos % 16
+   prev_block_start = (block_num-1) * 16
+   flip_idx1 = prev_block_start + offset
+   cipherFlipped = bytearray(ciphertext)
+   cipherFlipped[flip_idx1] ^= (ord("/") ^ ord("="))
 
-    flips = []
-    # Locate the three '?' placeholders in the message
-    question_positions = [m.start() for m in re.finditer(br'\?', message)]
-    if len(question_positions) < 3:
-        raise ValueError("Expected at least three '?' placeholders in the message")
+   #flipping the ':' to ';'
+   block_num = colon_pos // 16
+   offset = colon_pos % 16
+   prev_block_start = (block_num-1) * 16
+   flip_idx2 = prev_block_start + offset
+   cipherFlipped[flip_idx2] ^= (ord(":") ^ ord(";"))
+   
 
-    # Map each placeholder to desired target byte
-    targets = [';', '=', ';']
-    cipher_flipped = bytearray(ciphertext)
-    for pos, target in zip(question_positions[:3], targets):
-        block_num = pos // 16
-        if block_num == 0:
-            raise ValueError("Placeholder fell in block 0; choose a different input")
-        offset = pos % 16
-        prev_block_start = (block_num - 1) * 16
-        flip_idx = prev_block_start + offset
-        original_byte = message[pos]
-        cipher_flipped[flip_idx] ^= (original_byte ^ ord(target))
-        flips.append((pos, flip_idx, chr(original_byte), target))
+   #decrypt both 
+   cipher = AES.new(key, AES.MODE_CBC, iv)
+   beforeFlip = unpad(cipher.decrypt(ciphertext), 16, style="pkcs7")
+   afterFlip = unpad(cipher.decrypt(bytes(cipherFlipped)), 16, style="pkcs7")
 
-    # decrypt both 
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    before_flip = unpad(cipher.decrypt(ciphertext), 16, style="pkcs7")
-    after_flip = unpad(cipher.decrypt(bytes(cipher_flipped)), 16, style="pkcs7")
-    print("Before flip:", before_flip)
-    print("After flip:", after_flip)
-    for pos, flip_idx, orig, target in flips:
-        print(f"Changed byte: plaintext offset {pos}, ciphertext index {flip_idx}, '{orig}' -> '{target}'")
+   # show ciphertext before flip
+   print("\nBefore :admin/true - Ciphertext (hex):")
+   ciphertext_hex = ''.join([hex(x)[2:].zfill(2) for x in ciphertext])
+   print(ciphertext_hex)
+   print("\nAfter ;admin=true; - Ciphertext (hex):")
+   modified_hex = ''.join([hex(x)[2:].zfill(2) for x in cipherFlipped])
+   print(modified_hex)
 
-    print("verify(original) ->", verify(ciphertext))
-    print("verify(modified) ->", verify(bytes(cipher_flipped))) 
+   # Show the changed byte
+   print(f"Original bytes: {hex(ciphertext[flip_idx1])[2:].zfill(2)}, {hex(ciphertext[flip_idx2])[2:].zfill(2)}")
+   print(f"Modified bytes: {hex(cipherFlipped[flip_idx1])[2:].zfill(2)}, {hex(cipherFlipped[flip_idx2])[2:].zfill(2)}")
+   print("Changed byte indices in ciphertext: ",flip_idx1,",",flip_idx2)
+
+   print("Plaintext before flip:", beforeFlip)
+   print("Plaintext after flip:", afterFlip)
+   
+
+   print("verify(original) ->", verify(ciphertext))
+   print("verify(modified) ->", verify(bytes(cipherFlipped))) 
+
+
 
 key = get_random_bytes(16)
 iv = get_random_bytes(16)
 
 bitFlip()
+   
