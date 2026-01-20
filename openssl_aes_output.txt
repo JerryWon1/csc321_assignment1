@@ -1,0 +1,10 @@
+version: 3.5.2
+built on: Tue Aug  5 12:09:26 2025 UTC
+options: bn(64,64)
+compiler: clang -fPIC -arch arm64 -O3 -Wall -DL_ENDIAN -DOPENSSL_PIC -D_REENTRANT -DOPENSSL_BUILDING_OPENSSL -DNDEBUG
+CPUINFO: OPENSSL_armcap=0x987d
+The 'numbers' are in 1000s of bytes per second processed.
+type             16 bytes     64 bytes    256 bytes   1024 bytes   8192 bytes  16384 bytes
+aes-192-cbc     683374.29k  1367098.30k  1466220.68k  1507388.60k  1535805.47k  1538139.78k
+aes-256-cbc     950089.15k  1199709.96k  1284779.67k  1290042.59k  1312078.88k  1290599.99k
+AES-128-CBC    1197119.01k  1631210.93k  1748097.49k  1788448.50k  1800049.78k  1811013.91k
