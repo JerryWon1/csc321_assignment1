@@ -42,53 +42,53 @@ def CBC_encrypt(plaintext):
     return bytes(CBC_output)
 
 def bitFlip():
-   user_input = ":admin/true"
-   ciphertext = submit(user_input)
-   message = f"userid=456;userdata={urlEncode(user_input)};session-id=31337".encode("ascii")
-   # Find position of '/', and ':''s for bit flipping
-   slash_pos = message.index(b'/')#b'/' is bytes
-   colon_pos = message.index(b':')#another safe char 
-   
-   #flipping the '/' to '='
-   block_num = slash_pos // 16
-   offset = slash_pos % 16
-   prev_block_start = (block_num-1) * 16
-   flip_idx1 = prev_block_start + offset
-   cipherFlipped = bytearray(ciphertext)
-   cipherFlipped[flip_idx1] ^= (ord("/") ^ ord("="))
+    user_input = ":admin/true"
+    ciphertext = submit(user_input)
+    message = f"userid=456;userdata={urlEncode(user_input)};session-id=31337".encode("ascii")
+    # Find position of '/', and ':''s for bit flipping
+    slash_pos = message.index(b'/')#b'/' is bytes
+    colon_pos = message.index(b':')#another safe char 
 
-   #flipping the ':' to ';'
-   block_num = colon_pos // 16
-   offset = colon_pos % 16
-   prev_block_start = (block_num-1) * 16
-   flip_idx2 = prev_block_start + offset
-   cipherFlipped[flip_idx2] ^= (ord(":") ^ ord(";"))
-   
+    #flipping the '/' to '='
+    block_num = slash_pos // 16
+    offset = slash_pos % 16
+    prev_block_start = (block_num-1) * 16
+    flip_idx1 = prev_block_start + offset
+    cipherFlipped = bytearray(ciphertext)
+    cipherFlipped[flip_idx1] ^= (ord("/") ^ ord("="))
 
-   #decrypt both 
-   cipher = AES.new(key, AES.MODE_CBC, iv)
-   beforeFlip = unpad(cipher.decrypt(ciphertext), 16, style="pkcs7")
-   afterFlip = unpad(cipher.decrypt(bytes(cipherFlipped)), 16, style="pkcs7")
+    #flipping the ':' to ';'
+    block_num = colon_pos // 16
+    offset = colon_pos % 16
+    prev_block_start = (block_num-1) * 16
+    flip_idx2 = prev_block_start + offset
+    cipherFlipped[flip_idx2] ^= (ord(":") ^ ord(";"))
 
-   # show ciphertext before flip
-   print("\nBefore :admin/true - Ciphertext (hex):")
-   ciphertext_hex = ''.join([hex(x)[2:].zfill(2) for x in ciphertext])
-   print(ciphertext_hex)
-   print("\nAfter ;admin=true; - Ciphertext (hex):")
-   modified_hex = ''.join([hex(x)[2:].zfill(2) for x in cipherFlipped])
-   print(modified_hex)
 
-   # Show the changed byte
-   print(f"Original bytes: {hex(ciphertext[flip_idx1])[2:].zfill(2)}, {hex(ciphertext[flip_idx2])[2:].zfill(2)}")
-   print(f"Modified bytes: {hex(cipherFlipped[flip_idx1])[2:].zfill(2)}, {hex(cipherFlipped[flip_idx2])[2:].zfill(2)}")
-   print("Changed byte indices in ciphertext: ",flip_idx1,",",flip_idx2)
+    #decrypt both 
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    beforeFlip = unpad(cipher.decrypt(ciphertext), 16, style="pkcs7")
+    afterFlip = unpad(cipher.decrypt(bytes(cipherFlipped)), 16, style="pkcs7")
 
-   print("Plaintext before flip:", beforeFlip)
-   print("Plaintext after flip:", afterFlip)
-   
+    # show ciphertext before flip
+    print("\nBefore :admin/true - Ciphertext (hex):")
+    ciphertext_hex = ''.join([hex(x)[2:].zfill(2) for x in ciphertext])
+    print(ciphertext_hex)
+    print("\nAfter ;admin=true; - Ciphertext (hex):")
+    modified_hex = ''.join([hex(x)[2:].zfill(2) for x in cipherFlipped])
+    print(modified_hex)
 
-   print("verify(original) ->", verify(ciphertext))
-   print("verify(modified) ->", verify(bytes(cipherFlipped))) 
+    # Show the changed byte
+    print(f"Original bytes: {hex(ciphertext[flip_idx1])[2:].zfill(2)}, {hex(ciphertext[flip_idx2])[2:].zfill(2)}")
+    print(f"Modified bytes: {hex(cipherFlipped[flip_idx1])[2:].zfill(2)}, {hex(cipherFlipped[flip_idx2])[2:].zfill(2)}")
+    print("Changed byte indices in ciphertext: ",flip_idx1,",",flip_idx2)
+
+    print("Plaintext before flip:", beforeFlip)
+    print("Plaintext after flip:", afterFlip)
+
+
+    print("verify(original) ->", verify(ciphertext))
+    print("verify(modified) ->", verify(bytes(cipherFlipped))) 
 
 
 
